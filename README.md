@@ -23,8 +23,9 @@ public class Prenda {
 		this.colorSecundario = requireNonNull(color, "color es obligatorio");
 	}
   
-  public validoParaTemperatura(int temperatura)
-    return temperatura<tempMaximaAdecuada;
+  	public bool validoParaTemperatura(int temperatura){
+    		return temperatura<tempMaximaAdecuada;
+  	}
 }
 
 // BORRADOR
@@ -174,9 +175,20 @@ public class Clima {
 public class EmisorRecomendaciones {
 	public ArrayList<Prenda> prendas;
 	
-  // De una categoria obtener un elemento de la lista prendas
-  
-  // De una lista de categorias obtener un elemento de prendas por cada categoria en base al clima
+  	/* De una categoria obtener un elemento de la lista prendas
+  	public Prenda obtenerRecomendacion(Categoria categoria){ 
+	// Agregar validacion de clima: "&& prenda.validoParaTemperatura(clima.obtenerTemperaturaActualBuenosAires())"
+		//return prendas.where(prenda => prenda.categoria == categoria).first();
+	}
+	*/
+	/* De una lista de categorias obtener un elemento de prendas por cada categoria en base al clima
+	public ArrayList<Prenda> obtenerRecomendaciones(ArrayList<Categoria> categorias){
+		ArrayList<Prenda> prendasRecomendadas;
+		foreach(Categoria categoria:categorias)	//Reemplazar por map
+			prendasRecomendadas.Add(this.obtenerRecomendacion(categoria));
+		return prendasRecomendadas;
+	}
+	*/
 }
 
 ```
