@@ -2,9 +2,125 @@
 # QMP Iteración 5
 ---
 nota: ya va siendo momento de que lo mueva a archivos diferentes 
+## Requerimientos
+GRAL: Como usuarie de QuéMePongo, quiero compartir mis guardarropas con otras personas.
+
+1. Como usuarie de QuéMePongo, quiero poder manejar varios guardarropas para separar mis prendas según diversos criterios (ropa de viaje, ropa de entrecasa, etc). 
+Sol: usuarie con lista de guardarropas.
+
+2. Como usuarie de QuéMePongo, quiero poder crear guardarropas compartidos con otros usuaries (ej, ropa que comparto con mi hermane).
+Sol: usuarie puede agregar guardarropas previamente instanciados.
+
+3. Como usuarie de QuéMePongo, quiero que otro usuario me proponga tentativamente agregar una prenda al guardarropas.
+Sol: ver implementacion.
+
+4. Como usuarie de QuéMePongo, quiero que otro usuario me proponga tentativamente quitar una prenda del guardarropas.
+Sol: ver implementacion.
+
+5. Como usuarie de QuéMePongo, necesito ver todas las propuestas de modificación (agregar o quitar prendas) del guardarropas y poder aceptarlas o rechazarlas..
+Sol: Usuarie contiene una lista de propuestas. 
+
+6. Como usuarie de QuéMePongo, quiero poder deshacer las propuestas de modificación que haya aceptado.
+Sol: ver implementacion.
+
+### Notas
+Inicialmente el guardarropas tenia sus propuestas e historial pero si el guardarropas esta dentro de la propuesta y el historial forma parte del usuario separo mejor responsabilidades.
+Además, las propuestas son para un usuario y múltiples usuarios pueden tener instanciado un guardarropas, por lo que el guardarropas no puede tener las propuestas.
+
+Code Smell: Guardarropas actúa como DataClass. Podría modelarlo como una lista de prendas y que los usuarios tengan varios lavarropas en forma de lista de listas de prendas y que varios usuarios compartan listas de prendas apuntando a la misma instancia en sus listas. Pierdo expresividad por lo que decido mantener la DataClass por el momento.
+
+Que el guardarropas entienda los mensajes agregar(prenda) y elimiar(prenda) o que la propuesta lo haga con guardarropas.contenido.add/remove(prenda) ?
+- Opcion 1 es mas compleja (2 metodos menos que en un principio podrían parecer pasamanos) pero tengo menos acoplamiento entre propuesta y el guardarropas. Aprovecho la elección de abstraer el guardarropas por más que tenga un DataClass y comienza a tener métodos.
+- Opcion 2 **quizas** es más simple pero definitivamente más acoplada, estaría sabiendo hasta como implementa guardarropas su contenido.
+
+
 
 ## Código/Pseudocódigo
 ```java
+
+// USUARIO
+public class Usuarie{
+	ArrayList<Propuesta> propuestas;
+	ArrayList<Propuesta> historialAceptado;
+	ArrayList<Guardarropas> listaDeGuardarropas; 
+	
+	public Usuarie(){
+		propuestas = new ArrayList<Propuesta>();
+		historialAceptado = new ArrayList<Propuesta>();
+		listaDeGuardarropas = new ArrayList<Guardarropas>();
+
+	}
+
+	public void AgregarGuardarropas(Guardarropas guardarropas){
+		listaDeGuardarropas.add(requireNonNull(guardarropas,"Guardarropas no válido"))
+	}
+
+	public void AgregarPropuestaPrenda(Propuesta propuesta){ //recibo la prop directo para que no se acople Usuario a Propuesta sabiendo que contiene prenda etc.
+		propuestas.add(propuesta);
+	}
+
+	public void AceptarPropuesta(Propuesta propuesta){
+		historialAceptado.add(propuesta);
+		propuestas.remove(propuesta);
+		propuesta.aceptar();
+	}
+
+	public void DeshacerPropuesta(Propuesta propuesta){
+		historialAceptado.remove(propuesta);
+		propuesta.deshacer();
+		// Hace falta agregarla a la lista de propuestas de nuevo? preguntar negocio
+	}
+}
+
+// GUARDARROPAS
+public class Guardarropas{
+	ArrayList<Prenda> contenido;
+
+	public Guardarropas(ArrayList<Prenda> contenido){
+		this.contenido = contenido; //Puedo tener un guardarropas sin contenido? Por ahora si.
+	}
+
+	public void agregar(Prenda prenda){
+		contenido.add(prenda)
+	}
+
+	public void eliminar(Prenda prenda){
+		contenido.remove(prenda)
+	}
+}
+
+// PROPUESTA
+public abstract class Propuesta{ //no interfaz porque tiene el constructor
+	Prenda prenda;
+	Guardarropas guardarropas;
+
+	public Propuesta(Prenda prenda, Guardarropas guardarropas){
+		this.prenda = requireNonNull(prenda, "Una propuesta debe tener una prenda.");
+		this.guardarropas = requireNonNull(guardarropas, "Una propuesta debe tener un guardarropas");
+	}
+
+	public abstract aceptar();
+	public abstract deshacer()
+}
+
+public class PropuestaEliminar implements Propuesta{
+	aceptar(){
+		guardarropas.eliminar(prenda);
+	}
+	deshacer(){
+		guardarropas.agregar(prenda);
+	}
+}
+
+public class PropuestaEliminar implements Propuesta{
+	deshacer(){
+		guardarropas.eliminar(prenda);
+	}
+	aceptar(){
+		guardarropas.agregar(prenda);
+	}
+}
+
 // PRENDA
 public class Prenda {
 	TipoDePrenda tipoDePrenda;
@@ -229,5 +345,8 @@ public class EmisorRecomendaciones {
 }
 
 ```
+## Notas
+
+
 ## Diagrama de Clases
 [Pending]
