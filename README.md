@@ -2,25 +2,159 @@
 # QMP Iteración 6
 ---
 ## Requerimientos
-GRAL: 
+GRAL: Como usuarie de QueMePongo quiero poder enterarme si se emitió alguna alerta meteorológica para poder actuar en consecuencia.
+
+1. Usuarie > **recibir sugerencia diaria prenda** **actualizada** todas las mañannas.
+
+2. Empleade> **disparar cálculo de sugerencias diarias** para **todos los usuaries** 
+nota: para despues automatizar y disparalo todas las mañanas
+
+3. Usuarie> **conocer** cuáles son las **últimas alertas meteorológicas publicadas en el sistema**.
+nota: por eg al ingresar a la pagina
+
+4. Empleade> **disparar consulta y actualizacion** de la **lista de alertas publicadas en el sistema** para tener control sobre cuándo se publican las mismas nota: control de que??? 
+
+5. Usuarie> que **se actualice mi sugerencia diaria** con las condiciones climáticas actualizadas **cuando se genere algún alerta** durante el día. 
+
+6. Usuarie> **ante una alerta de tormenta** la app **me notifique que debo llevarme también un paraguas**. 
+
+7. Usuarie> **ante una alerta de granizo** la app  **me notifique que evite salir en auto**.
+
+8. Usuarie> **recibir un mail avisándome si se generó algún alerta meteorológico y cuál**.
+
+9. Usuarie> **configurar cuáles de estas acciones** quiero que se ejecuten y cuáles no.
+nota: notificaciones, mail, recálculo
+
+**Soportar nuevas acciones a futuro**. (No nos interesará, sin embargo, soportar nuevas alertas)
 
 ### Notas
+Se cuenta con una API Para Java del sistema operativo que envía notificaciones en la pantalla al usuario mientras navega el sitio:
+
+NotificationService>>notify(text)
+
+Se cuenta con un servicio externo de mails:
+
+MailSender>>send(address,message)
+
+
+Está super rancia la abstracción del clima, se usa a veces, a veces no y a veces es un pasamanos. Revisar.
+Código en diferentes idiomas.
+A veces metodos en mayuscula y otros en minuscula.
+
+3. El usuario puede consultar las alertas conociendo el EmisorNotificaciones.
+2. Puede mandar un mensaje a EmisorNotificaciones de EnviarRecomendacione()
 
 ## Código/Pseudocódigo
 ```java
+
+// USUARIE EMPLEADE
+public class EmisorNotificaciones{
+	ArrayList<Usuarie> usuaries;
+	List<String> alerts;
+	Clima servicioClima;
+
+	public EmisorRecomendaciones(Clima servicioClima){
+		this.servicioClima = servicioClima;	//requirenonull...
+	}
+
+	public void EnviarRecomendaciones(){
+		for(Usuarie user : usuaries)
+			user.NuevaNotificacion(new RecalculoRecomendacion("Actualizacion",user));
+	}
+
+	public void ActualizarAlertas(){
+		alerts = servicioClima.GetCurrentAlerts();
+		this.EnviarRecomendaciones();
+		this.EnviarNotificaciones();
+	}
+
+	
+	public void EnviarNotificaciones(){
+		for(Usuarie user : usuaries)
+			for(String alert : alerts){
+				switch(alert) {
+				  case "Hail":
+				    user.NuevaNotificacion(new AlertaMetereologicaPopup("No salgas en auto!",user));
+				    break;
+				  case "Storm":
+				    user.NuevaNotificacion(new AlertaMetereologicaPopup("Lleva paraguas!",user));
+				    break;
+				  default:
+				    //comportamiento default, nada
+				}
+				user.NuevaNotificacion(new AlertaMetereologicaMail(alert,user));
+			}
+	}
+
+
+
+}
+
+public abstract class Notificacion{
+	String alerta;
+	Usuarie usuarie;
+
+	public Notificacion(String alerta, Usuarie usuarie){
+		this.alerta = alerta;
+		this.usuarie = usuarie;
+	}
+
+	void notificar();
+}
+
+public class RecalculoRecomendacion : Notificacion{
+	void notificar(){
+		if(usuarie.recalculoActivado)
+			usuarie.recomedacionDiaria = usuarie.emisorRecomendaciones.obtenerRecomendaciones(Categoria.values());
+	}
+}
+
+public class AlertaMetereologicaMail : Notificacion{
+	void notificar(){
+		if(usuarie.mailsActivados)
+			MailSender mailSender = new MailSender();
+			mailSender.send(usuarie.address, alerta); 
+
+	}
+}
+
+public class AlertaMetereologicaPopup : Notificacion{
+	void notificar(){
+		if(usuarie.notificacionesActivadas)
+			notifService.notify(alert);	//Como lo conoce? Singleton? DI?
+	}
+}
 
 // USUARIO
 public class Usuarie{
 	ArrayList<Propuesta> propuestas;
 	ArrayList<Propuesta> historialAceptado;
-	ArrayList<Guardarropas> listaDeGuardarropas; 
+	ArrayList<Guardarropas> listaDeGuardarropas;
+
+ 	ArrayList<Prenda> recomedacionDiaria;
+	EmisorRecomendaciones emisorRecomendaciones;	
 	
-	public Usuarie(){
+	Boolean mailsActivados;
+	Boolean recalculoActivado;
+	Boolean notificacionesActivadas;
+
+	String address;
+
+	public Usuarie(ServicioMetereologico servicio, String address){
 		propuestas = new ArrayList<Propuesta>();
 		historialAceptado = new ArrayList<Propuesta>();
 		listaDeGuardarropas = new ArrayList<Guardarropas>();
-
+		emisorRecomendaciones = new EmisorRecomendaciones(servicio,listaDeGuardarropas.get(0).contenido);
+		this.address = address;
+		// no esta definido a partir de que obtener la recomendacion
 	}
+
+	// Recomendaciones
+	public void NuevaNotificacion(Notificacion notificacion){
+		notificacion.notificar();
+	}
+
+	// Guardarropas
 
 	public void AgregarGuardarropas(Guardarropas guardarropas){
 		listaDeGuardarropas.add(requireNonNull(guardarropas,"Guardarropas no válido"))
@@ -225,11 +359,16 @@ public final class AccuWeatherAPI{
 				put("UnitType", 18);
 			}});
 		}});
+	public final Map<String,List<String>> getAlerts(String ciudad){
+		//Returns alertas
+	}
 }
 
 // SERVICIOS METEREOLOGICOS
 public interface ServicioMetereologico{
-	public List<Map<String, Object>> obtenerInformacionClima(string locacion);
+	public List<Map<String, Object>> obtenerInformacionClima(String locacion);
+
+	public List<String> obtenerAlertas(String locacion);
 }
 
 // SERVICIO ACCUWEATHER
@@ -260,6 +399,14 @@ public class ServicioAccuweather implements ServicioMetereologico{
 		this.dataDuration = dataDuration;
 	}
 
+	ServicioAccuweather(){
+		this.dataDuration = new DateTime(0,0,0,0,15,0);
+	}
+
+	public List<String> getCurrentAlerts(String locacion){
+		return servicioAccuweather.getAlertas(locacion).get("CurrentAlerts");
+	}
+
 	List<Map<String, Object>> obtenerInformacionClima(string locacion) {
 		if (!this.respuestasPrevias.contains(locacion) || 
 			this.respuestasPrevias.get(locacion).expiro()) {
@@ -288,6 +435,10 @@ public class Clima {
 	public List<Map<String, Object>> obtenerInformacionClima(string locacion) {
 		return servicioMetereologico.obtenerInformacionClima(locacion);	
 	}
+
+	public List<String> getCurrentAlerts(){
+		return servicioMetereologico.getCurrentAlerts("Buenos Aires,Argentina"); //Pasamanos parametrizado
+	}
 }
 
 // RECOMENDACIONES
@@ -310,7 +461,7 @@ public class EmisorRecomendaciones {
 	}
 	
 	// De una lista de categorias obtener un elemento de prendas por cada categoria en base al clima
-	public ArrayList<Prenda> obtenerRecomendaciones(ArrayList<Categoria> categorias){
+	public ArrayList<Prenda> (ArrayList<Categoria> categorias){
 		return categorias.stream().map(categoria ->this.obtenerRecomendacion(categoria));;
 	}
 }
