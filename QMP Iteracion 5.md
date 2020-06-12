@@ -1,10 +1,38 @@
 ---
-# QMP Iteración 6
+# QMP Iteración 5
 ---
 ## Requerimientos
-GRAL: 
+GRAL: Como usuarie de QuéMePongo, quiero compartir mis guardarropas con otras personas.
+
+1. Como usuarie de QuéMePongo, quiero poder manejar varios guardarropas para separar mis prendas según diversos criterios (ropa de viaje, ropa de entrecasa, etc). 
+Sol: usuarie con lista de guardarropas.
+
+2. Como usuarie de QuéMePongo, quiero poder crear guardarropas compartidos con otros usuaries (ej, ropa que comparto con mi hermane).
+Sol: usuarie puede agregar guardarropas previamente instanciados.
+
+3. Como usuarie de QuéMePongo, quiero que otro usuario me proponga tentativamente agregar una prenda al guardarropas.
+Sol: ver implementacion.
+
+4. Como usuarie de QuéMePongo, quiero que otro usuario me proponga tentativamente quitar una prenda del guardarropas.
+Sol: ver implementacion.
+
+5. Como usuarie de QuéMePongo, necesito ver todas las propuestas de modificación (agregar o quitar prendas) del guardarropas y poder aceptarlas o rechazarlas..
+Sol: Usuarie contiene una lista de propuestas. 
+
+6. Como usuarie de QuéMePongo, quiero poder deshacer las propuestas de modificación que haya aceptado.
+Sol: ver implementacion.
 
 ### Notas
+Inicialmente el guardarropas tenia sus propuestas e historial pero si el guardarropas esta dentro de la propuesta y el historial forma parte del usuario separo mejor responsabilidades.
+Además, las propuestas son para un usuario y múltiples usuarios pueden tener instanciado un guardarropas, por lo que el guardarropas no puede tener las propuestas.
+
+Code Smell: Guardarropas actúa como DataClass. Podría modelarlo como una lista de prendas y que los usuarios tengan varios lavarropas en forma de lista de listas de prendas y que varios usuarios compartan listas de prendas apuntando a la misma instancia en sus listas. Pierdo expresividad por lo que decido mantener la DataClass por el momento.
+
+Que el guardarropas entienda los mensajes agregar(prenda) y elimiar(prenda) o que la propuesta lo haga con guardarropas.contenido.add/remove(prenda) ?
+- Opcion 1 es mas compleja (2 metodos menos que en un principio podrían parecer pasamanos) pero tengo menos acoplamiento entre propuesta y el guardarropas. Aprovecho la elección de abstraer el guardarropas por más que tenga un DataClass y comienza a tener métodos.
+- Opcion 2 **quizas** es más simple pero definitivamente más acoplada, estaría sabiendo hasta como implementa guardarropas su contenido.
+
+
 
 ## Código/Pseudocódigo
 ```java
