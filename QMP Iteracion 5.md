@@ -50,21 +50,25 @@ public class Usuarie{
 
 	}
 
-	public void AgregarGuardarropas(Guardarropas guardarropas){
+	public void agregarGuardarropas(Guardarropas guardarropas){
 		listaDeGuardarropas.add(requireNonNull(guardarropas,"Guardarropas no válido"))
 	}
 
-	public void AgregarPropuestaPrenda(Propuesta propuesta){ //recibo la prop directo para que no se acople Usuario a Propuesta sabiendo que contiene prenda etc.
+	public obtenerPrendas(){
+		return guardarropas.flatMap(g->g.contenido);
+	}
+
+	public void agregarPropuestaPrenda(Propuesta propuesta){ //recibo la prop directo para que no se acople Usuario a Propuesta sabiendo que contiene prenda etc.
 		propuestas.add(propuesta);
 	}
 
-	public void AceptarPropuesta(Propuesta propuesta){
+	public void aceptarPropuesta(Propuesta propuesta){
 		historialAceptado.add(propuesta);
 		propuestas.remove(propuesta);
 		propuesta.aceptar();
 	}
 
-	public void DeshacerPropuesta(Propuesta propuesta){
+	public void deshacerPropuesta(Propuesta propuesta){
 		historialAceptado.remove(propuesta);
 		propuesta.deshacer();
 		// Hace falta agregarla a la lista de propuestas de nuevo? preguntar negocio
