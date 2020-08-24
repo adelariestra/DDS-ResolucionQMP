@@ -36,7 +36,6 @@ Se cuenta con un servicio externo de mails:
 
 MailSender>>send(address,message)
 
-
 Está super rancia la abstracción del clima, se usa a veces, a veces no y a veces es un pasamanos. Revisar.
 Código en diferentes idiomas.
 A veces metodos en mayuscula y otros en minuscula.
@@ -44,7 +43,55 @@ A veces metodos en mayuscula y otros en minuscula.
 3. El usuario puede consultar las alertas conociendo el EmisorNotificaciones.
 2. Puede mandar un mensaje a EmisorNotificaciones de EnviarRecomendacione()
 
+#### Sobre diagramas de clases [!IMPORTANTE!]
+- **No llamar a los métodos "notificar", en observers representan eventos.**
+- **No llamar a las cosas por lo que son, eg: enum... builder... interfaz... etc.**
+- **Partir diagramas de clases en partes**.
+- **Tipar bien los métodos**.
+- **Definir métodos para agregar y quitar observadores**.
+
+---
+## Correcciones Resolución
+---
+#### Repositorio de usuarios
+Conviene tener un repositorio de usuarios en vez de que esten en una lista en el emisor. 
+
+Atts:
+Lista/Lo que sea de usuarios.
+
+Métodos:
+- Buscar usuarios
+- Agregar
+- Eliminar
+...
+
+Puede ser implementado como un Singleton o puedo inyectarlo.
+
+#### Emisor Notificaciones
+nota: "GestorDeAlertas" es un mal nombre, no dice que hace, solo que "gestiona".
+
+Tener las alertas como lsita de strings en mi emisor de notificaciones le da muchas responsabilidades y al tener strings estoy más acoplado.
+
+Puedo convertirlas en enum y trasladarlas a un objeto relacionado.
+eg: ServicioMetereológico
+
+#### Servicios de Notificacion
+Para despreocuparme de ala implementacion de MailSender, Notificador, etc, los abstraigo como Interfaces y luego me preocupo.
+
+#### Eventos
+Mi solución planteada tiene poca extensibilidad. Ante un nuevo tipo de notificación debo agregar un nuevo bool.
+Además, el emisor de notificaciones define el mensaje de las notificaciones, conoce los tipos para cada una, etc.
+
+Corrección:
+Usuario suscripto a ciertas acciones (reemplazando los booleans, pasa a ser observer de estas acciones.)
+Acciones son notificadas ante una actualización de alertas, ya sea un solo evento o uno para granizo y otro para tormenta, y las acciones se efectuan para todos los usuarios suscriptos.
+
+#### Notas Generales
+Si es un repo, quizas pueda usar Singleton. Cualquier otra cosa, no, hace mucho ruido.
+
+---
 ## Código/Pseudocódigo
+---
 ```java
 // REPO USUARIOS - Correccion
 class RepositorioUsuarios{
@@ -496,42 +543,6 @@ public class EmisorRecomendaciones {
 }
 
 ```
-### Correcciones Resolución
-#### Repositorio de usuarios
-Conviene tener un repositorio de usuarios en vez de que esten en una lista en el emisor. 
-
-Atts:
-Lista/Lo que sea de usuarios.
-
-Métodos:
-- Buscar usuarios
-- Agregar
-- Eliminar
-...
-
-Puede ser implementado como un Singleton o puedo inyectarlo.
-
-#### Emisor Notificaciones
-nota: "GestorDeAlertas" es un mal nombre, no dice que hace, solo que "gestiona".
-
-Tener las alertas como lsita de strings en mi emisor de notificaciones le da muchas responsabilidades y al tener strings estoy más acoplado.
-
-Puedo convertirlas en enum y trasladarlas a un objeto relacionado.
-eg: ServicioMetereológico
-
-#### Servicios de Notificacion
-Para despreocuparme de ala implementacion de MailSender, Notificador, etc, los abstraigo como Interfaces y luego me preocupo.
-
-#### Eventos
-Mi solución planteada tiene poca extensibilidad. Ante un nuevo tipo de notificación debo agregar un nuevo bool.
-Además, el emisor de notificaciones define el mensaje de las notificaciones, conoce los tipos para cada una, etc.
-
-Corrección:
-Usuario suscripto a ciertas acciones (reemplazando los booleans, pasa a ser observer de estas acciones.)
-Acciones son notificadas ante una actualización de alertas, ya sea un solo evento o uno para granizo y otro para tormenta, y las acciones se efectuan para todos los usuarios suscriptos.
-
-#### Notas Generales
-Si es un repo, quizas pueda usar Singleton. Cualquier otra cosa, no, hace mucho ruido.
 
 ## Diagrama de Clases
 [Pending]

@@ -1,0 +1,371 @@
+---
+# [DDS] Apuntes QMP
+---
+## Primera Iteración
+---
+Enunciado: https://docs.google.com/document/d/1k1f-9AuIohlBGB2soSNePJ6jLxM37_tZeSD-hW_esIQ/edit
+
+### Requerimientos
+Especificar:
+- Tipo de prenda
+- Categoria
+- Tela / Material
+- Color principal
+- Color secundario (si existe)
+- Evitar prendas sin tipo, sin tela, sin categoria o sin color primario.
+- Evitar prendas con categoria que no se corresponda con su tipo.
+
+### Decisiones
+Constructor > setter para evitar mutaciones innecesarias y ambiguedades.
+
+Puedo englobar tela y material.
+
+Modelado de tipo, categoria y material
+1. Usar strings
+PROS: Simplicidad
+CONS: Strings inválidos de input.
+Ingresos de mismos términos sin que esten estandarizados. (solucionable normalizando)
+2. Usar enums como tipos.
+
+Modelado de color
+1. enum
+CON: no tiene sentido
+2. listado de colores html
+3. terna de colores RGB
+
+Categorias de prendas
+nota: hay relacion directa entre tipo de prenda y categoría
+nota2: para simplicidad asumimos que una prenda pertenece a una única categoría.
+1. Prenda tiene su tipo y su categoria (ambos enums)
+2. Prenda tiene su tipo (clase) y el tipo tiene una categoria (enum)
+PROs: 
+menos dependencias, más simple
+mayor robustez, no permite inconsistencias
+
+Validaciones
+1. Puedo usar requireNoNull para validar que no sea nulo en el constructor para fail fast
+
+Color opcional
+????
+
+---
+## Segunda Iteración
+---
+Enunciado: https://docs.google.com/document/d/10j6XB9zIhl5xox2xBEDEFsgPmueHMkyvLSHcLxl_27Y/edit#
+
+### Requerimientos
+- Especificar trama de la tela
+- Especificar primero de que tipo es una prenda.
+- Especificar en segundo lugar cosas relacionadas al material para evitar inconsistencias con el tipo de prenda
+- Borrador de última prenda que empecé a cargar.
+- poder no indicar ninguna trama para una tela, y que por defecto ésta sea lisa.
+- solo guardar prenda si es válida
+
+- recibir sugerencias de uniformes armados
+- uniforme siempre es prenda sup, prenda inf y calzado
+- dif uniformes para dif instituciones.
+
+### Soluciones
+Trama
+1. Combinaciones infinitas de material y trama para el enum
+2. Prenda tiene Material(clase) tiene un tipo(enum) y una trama(enum)
+3. Prenda tiene material(enum) y trama(enum). + simple
+
+Borradores
+1. Clase borrador que herede de prenda 
+- si es mutable: trabajo directo sobre la prenda (no lo es)
+- si es inmutable: + constructor con tipo de prenda + setters + crearprenda() que devuelva una prenda creada con los atributos del borrador
+ademas:
+- validaciones de nonulos en setters
+- mover validaciones del constructor a "crearprenda"CABAYO
+- constructor con tipo de prenda
+- validar consistencia material - tipo
+PROS
+- Tener una visión mutable de un objeto inmutable: aunque la Prenda es inmutable, el borrador es
+mutable.
+- Posibilitar la construcción por pasos
+- Asegurar un único punto de creación y validación: el mensaje crearPrenda (build)
+- Simplificar la construcción implementando valores por defecto y calculables
+- Independizarse de la representación interna del objeto construido: por ejemplo, si en el futuro el
+constructor de la clase Prenda cambia, o pasa a ser una clase abstracta con subclases, el
+- Borrador podría amortiguar esos cambios, y mantener su interfaz de forma que quienes
+construyan prendas a través de éste no noten la diferencia.
+
+Trama lisa default
+method especificarTrama(trama)
+this.trama = if trama is null then Trama.LISA else trama
+
+Uniformes
+1. composición y Abstract Factory
+```java
+class Uniforme
+	attribute prendaSuperior
+	attribute prendaInferior
+	attribute calzado
+
+	classmethod fabricar(Sastre sastre)
+	new Uniforme(
+		sastre.fabricarParteSuperior(),
+		sastre.fabricarParteInferior(),
+		sastre.fabricarCalzado())
+
+interface Sastre
+	method fabricarParteSuperior()
+	method fabricarParteInferior()
+	method fabricarCalzado()
+
+class SastreSanJuan implements Sastre
+	method fabricarParteSuperior()
+		borrador = new Borrador(CHOMBA)
+		borrador.especificarColor(new Color(....))
+		borrador.especificarMaterial(PIQUE)
+		return borrador.crearPrenda()
+	method fabricarParteInferior()
+		borrador = new Borrador(PANTALON)
+		borrador.especificarColor(new Color(....))
+		borrador.especificarMaterial(ACETATO)
+		return borrador.crearPrenda()
+		//etc...
+```
+
+2. Solución creacional basada en herencia y Factory Method
+```java
+class Uniforme
+	attribute prendaSuperior
+	attribute prendaInferior
+	attribute calzado
+
+abstract class Sastre
+	method fabricarUniforme()
+	new Uniforme(
+		this.fabricarParteSuperior(),
+		this.fabricarParteInferior(),
+		this.fabricarCalzado())
+	// estos método están aquí para ser implementados por las subclases,
+	// y no para ser utilizados por otros objetos
+	protected abstract method fabricarParteSuperior()
+	protected abstract method fabricarParteInferior()
+	protected abstract method fabricarCalzado()
+
+class SastreSanJuan inherits Sastre
+	method fabricarParteSuperior()
+		borrador = new Borrador(CHOMBA)
+		borrador.especificarColor(new Color(....))
+		borrador.especificarMaterial(PIQUE)
+		return borrador.crearPrenda()
+
+	method fabricarParteInferior()
+		borrador = new Borrador(PANTALON)
+		borrador.especificarColor(new Color(....))
+		borrador.especificarMaterial(ACETATO)
+		return borrador.crearPrenda()
+```
+
+
+
+---
+## Cuarta Iteración
+---
+### Codigo inicial
+
+```java
+// PRENDA
+public class Prenda {
+	TipoDePrenda tipoDePrenda;
+	Material material;
+	Color color;
+	Color colorSecundario; // Si no lo defino, no pasa nada
+	Trama trama;
+	int tempMaximaAdecuada;
+
+	// Estas validaciones requireNonNull estan en Borrador. Sacar?
+	public Prenda(TipoDePrenda tipo, Material material, Color color, Trama trama, int tempMaximaAdecuada){
+		this.tipoDePrenda = requireNonNull(tipo, "tipo de prenda es obligatorio");
+		this.trama = requireNonNull(trama, "trama de prenda es obligatorio");
+		this.material = requireNonNull(material, "material es obligatorio");
+		this.color = requireNonNull(color, "color es obligatorio");
+		this.tempMaximaAdecuada = requireNonNull(tempMaximaAdecuada, "temperatura maxima adecuada para la prenda es obligatorio");
+	}
+
+	public especificarColorSecundario(Color color){
+		this.colorSecundario = requireNonNull(color, "color es obligatorio");
+	}
+}
+
+// BORRADOR
+public class Borrador : Prenda{
+	public Borrador(TipoDePrenda tipo)
+		this.tipoDePrenda = requireNonNull(tipo, "tipo de prenda es obligatorio");
+
+	public void especificarTrama(Trama trama)
+		this.trama = if trama is null then Trama.LISA else trama
+
+	public void especificarMaterial(Material material)
+		this.validarMaterialConsistenteConTipoDePrenda(material);
+		this.material = requireNonNull(material, "material es obligatorio");
+
+	public void especificarColorPrincipal(Color color)
+		this.color = requireNonNull(color, "color es obligatorio");
+
+	public void especificarTempMaximaAdecuada(int temperatura)
+		this.tempMaximaAdecuada = requireNonNull(temperatura, "temperatura maxima adecuada para la prenda es obligatorio");
+
+
+	public Prenda crearPrenda()
+		return new Prenda(tipo, material, colorPrincipal, colorSecundario, trama);
+
+}
+
+// TRAMA
+public enum Trama{
+	LISA, RAYADA, ...;
+}
+
+// TIPO PRENDA
+public class TipoDePrenda{
+	Categoria categoria;
+
+	public TipoDePrenda(Categoria categoria)
+		this.categoria = categoria;
+	
+	public Categoria categoria()
+		return this.categoria;
+}
+
+// CATEGORIA
+public enum Categoria{
+	PARTE_SUP,CALZADO,PAARTE_INF,ACCESORIO
+}
+
+// COLOR
+public class Color{
+	int rojo, verde, azul
+	public Color (int rojo, int verde, int azul){
+		this.rojo = rojo;
+		this.verde = verde;
+		this.azul = azul;
+	}
+}
+
+// SASTRE Y UNIFORMES - TODO: Pasar a javaish
+class Uniforme{
+	attribute prendaSuperior
+	attribute prendaInferior
+	attribute calzado
+
+	classmethod fabricar(Sastre sastre)
+	new Uniforme(
+		sastre.fabricarParteSuperior(),
+		sastre.fabricarParteInferior(),
+		sastre.fabricarCalzado())
+}
+
+interface Sastre{
+	method fabricarParteSuperior()
+	method fabricarParteInferior()
+	method fabricarCalzado()
+}
+
+class SastreSanJuan implements Sastre{
+	method fabricarParteSuperior()
+		borrador = new Borrador(CHOMBA)
+		borrador.especificarColor(new Color(....))
+		borrador.especificarMaterial(PIQUE)
+		return borrador.crearPrenda()
+	method fabricarParteInferior()
+		borrador = new Borrador(PANTALON)
+		borrador.especificarColor(new Color(....))
+		borrador.especificarMaterial(ACETATO)
+		return borrador.crearPrenda()
+		//etc...
+}
+
+// API ACCUWEATHER - Porcion de código copiada
+public final class AccuWeatherAPI{
+    public final List<Map<String, Object>> getWeather(String ciudad) 
+		return Arrays.asList(new HashMap<String, Object>(){{
+			put("DateTime", "2019-05-03T01:00:00-03:00");
+			put("EpochDateTime", 1556856000);
+			put("WeatherIcon", 33);
+			put("IconPhrase", "Clear");
+			put("IsDaylight", false);
+			put("PrecipitationProbability", 0);
+			put("MobileLink", "http://m.accuweather.com/en/ar/villa-vil/7984/");
+			put("Link", "http://www.accuweather.com/en/ar/villa-vil/7984");
+			put("Temperature", new HashMap<String, Object>(){{
+				put("Value", 57);
+				put("Unit", "F");
+				put("UnitType", 18);
+			}});
+		}});
+}
+
+// SERVICIOS METEREOLOGICOS
+public interface ServicioMetereologico{
+	public int obtenerTemperaturaActual(string locacion);
+
+	public List<Map<String, Object>> obtenerInformacionClima(string locacion);
+}
+
+// SERVICIO ACCUWEATHER
+public class ServicioAccuweather implements ServicioMetereologico{
+	int obtenerTemperaturaActual(string locacion){
+		return obtenerInformacionClima(locacion).get(0).get("Temperature");
+	}
+	
+	List<Map<String, Object>> obtenerInformacionClima(string locacion) {
+		AccuWeatherAPI servicioAccuweather = new AccuWeatherAPI();
+		return infoClima =  servicioAccuweather.getWeather(locacion);
+	}
+}
+
+// CLIMA ACTUAL
+public class Clima {
+	ServicioMetereologico servicioMetereologico;
+	public Clima(ServicioMetereologico servicio){
+		this.ServicioMetereologico = requireNonNull(servicio,"Debe especificarse un servicio");
+	}
+	
+	public int obtenerTemperaturaActualBuenosAires(){
+		return servicioMetereologico.obtenerTemperaturaActual("Buenos Aires,Argentina");
+	}
+	
+	public List<Map<String, Object>> obtenerInformacionClima(string locacion) {
+		return servicioMetereologico.obtenerInformacionClima(locacion);	
+	}
+}
+
+// RECOMENDACIONES
+public class Armario {
+	public ArrayList<Prenda> prendas;
+	
+	ArrayList<Prenda> sugerencia() {
+		list<Prenda> sugerencia;
+		
+		for(TipoDePrenda unTipoDePrenda: listaTiposDePrenda() ) {
+			sugerencia.add(unaPrendaParaSugerir(unTipoDePrenda));
+		}
+		
+		return sugerencia;
+	}
+	
+	Set<TipoDePrenda> listaTiposDePrenda() {
+		Set<TipoDePrenda> tiposDePrenda;
+		
+		for (Prenda unaPrenda : prendas) {
+			tiposDePrendas.add( unaPrenda.getTipoDePrenda() );
+		}
+		
+		return tiposDePrenda;
+	}
+	
+	Prenda unaPrendaParaSugerir( TipoDePrenda unTipoDePrenda ) {
+		return prendas.Steam().filter(unaPrenda -> unaPrenda.getTipoDePrenda() == unTipoDePrenda && unaPrenda.aptaParaTempActual()).first();
+	}
+	
+	
+}
+
+```
+
+---
