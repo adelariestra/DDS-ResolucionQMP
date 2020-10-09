@@ -96,11 +96,11 @@ Body:
 Código respuesta:
 - 200 : Prenda encontrada y eliminada
 - 404 : Prenda no encontrada
+- 500: Server error
 
 Body respuesta:
 ```json 
 ```
-
 
 ### Como usuarie de QueMePongo, quiero poder ver mis eventos para administrarlos
 Ruta: GET 'https://macowins-server.herokuapp.com/eventos'
@@ -166,9 +166,9 @@ Body respuesta:
 ---
 ## TODO
 ---
-- [ ] Armar rutas REST (URI + Método)
-- [ ] Esbozar qué información se enviaría en el body (por ej, en un JSON)
-- [ ] Pensar códigos de respuesta posibles para cada operación
-- [ ] Esbozar bodies de respuesta posibles
+- [X] Armar rutas REST (URI + Método)
+- [X] Esbozar qué información se enviaría en el body (por ej, en un JSON)
+- [X] Pensar códigos de respuesta posibles para cada operación
+- [X] Esbozar bodies de respuesta posibles
 
 ---
