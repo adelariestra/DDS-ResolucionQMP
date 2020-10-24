@@ -260,13 +260,6 @@ GET /eventos/:id/sugerencias
 Asume que son del usuario logueado
 No tiene sentido una sugerencia sin un evento
 
-#### Body Request
-
-#### Código
-
-#### Body response
-
-
 ---
 ## TODO
 ---
